@@ -1,0 +1,143 @@
+## Hi there 👋
+
+<!--
+**tgalmeida1992/tgalmeida1992** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+
+Here are some ideas to get you started:
+
+- 🔭 I’m currently working on ...
+- 🌱 I’m currently learning ...
+- 👯 I’m looking to collaborate on ...
+- 🤔 I’m looking for help with ...
+- 💬 Ask me about ...
+- 📫 How to reach me: ...
+- 😄 Pronouns: ...
+- ⚡ Fun fact: ...
+-->
+flutter create crypto_wallet
+cd crypto_wallet
+dependencies:
+  flutter:
+    sdk: flutter
+  web3dart: ^2.3.0
+  http: ^0.14.0
+  flutter_secure_storage: ^5.0.2
+flutter pub get
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:web3dart/web3dart.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: WalletPage(),
+    );
+  }
+}
+
+class WalletPage extends StatefulWidget {
+  @override
+  _WalletPageState createState() => _WalletPageState();
+}
+
+class _WalletPageState extends State<WalletPage> {
+  final _storage = FlutterSecureStorage();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  String _balance = "0.0 ETH"; // Balance do Ethereum (alterar conforme o token)
+
+  // Exemplo de código para enviar uma transação Ethereum
+  Future<void> sendTransaction() async {
+    // A chave privada que você gerencia no app (precisa ser salva de forma segura)
+    String privateKey = await _storage.read(key: "privateKey") ?? "";
+    if (privateKey.isEmpty) {
+      print("Chave privada não encontrada.");
+      return;
+    }
+
+    // Configuração do cliente Web3
+    final client = Web3Client("https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID", http.Client());
+
+    // Convertendo chave privada para credenciais
+    final credentials = await client.credentialsFromPrivateKey(privateKey);
+
+    // Endereço de destino e valor da transação
+    final toAddress = EthereumAddress.fromHex(_addressController.text);
+    final amount = EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(int.parse(_amountController.text)));
+
+    // Criando e enviando a transação
+    await client.sendTransaction(
+      credentials,
+      Transaction(
+        to: toAddress,
+        value: amount,
+      ),
+      chainId: 1, // Mainnet Ethereum
+    );
+
+    // Atualizando o saldo após enviar a transação
+    fetchBalance();
+  }
+
+  // Função para buscar o saldo da carteira Ethereum
+  Future<void> fetchBalance() async {
+    String privateKey = await _storage.read(key: "privateKey") ?? "";
+    if (privateKey.isEmpty) {
+      print("Chave privada não encontrada.");
+      return;
+    }
+
+    final client = Web3Client("https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID", http.Client());
+    final credentials = await client.credentialsFromPrivateKey(privateKey);
+    final address = await credentials.extractAddress();
+
+    final balance = await client.getBalance(address);
+    setState(() {
+      _balance = "${balance.getValueInUnit(EtherUnit.ether)} ETH";
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBalance();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Crypto Wallet")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Saldo: $_balance"),
+            SizedBox(height: 20),
+            TextField(
+              controller: _addressController,
+              decoration: InputDecoration(labelText: "Endereço de Destino"),
+            ),
+            TextField(
+              controller: _amountController,
+              decoration: InputDecoration(labelText: "Quantia (em wei)"),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: sendTransaction,
+              child: Text("Enviar Transação"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+flutter run
