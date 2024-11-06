@@ -1,0 +1,23 @@
+- 👋 Hi, I’m @tgalmeida1992
+- 👀 I’m interested in ...
+- 🌱 I’m currently learning ...
+- 💞️ I’m looking to collaborate on ...
+- 📫 How to reach me ...
+- 😄 Pronouns: ...
+- ⚡ Fun fact: ...
+
+<!---
+tgalmeida1992/tgalmeida1992 is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+You can click the Preview link to take a look at your changes.
+--->// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract GameCoin is ERC20 {
+    constructor(uint256 initialSupply) ERC20("GameCoin", "GC") {
+        _mint(msg.sender, initialSupply);
+    }
+}
+
+
